@@ -1,4 +1,6 @@
 
+(function() {
+
 /**
  * [Storage description]
  */
@@ -203,3 +205,5 @@ window.ab = function (name, traffic) {
 window.ab.config = {
   STORAGE_PREFIX: 'ab:'
 };
+
+})();
