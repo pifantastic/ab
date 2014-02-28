@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/pifantastic/ab.png?branch=master)](https://travis-ci.org/pifantastic/ab)
+[![Build Status](https://travis-ci.org/pifantastic/ab.png?branch=master)](https://travis-ci.org/pifantastic/ab) [![Dependency Status](https://david-dm.org/pifantastic/ab.png)](https://david-dm.org/pifantastic/ab) [![devDependency Status](https://david-dm.org/pifantastic/ab/dev-status.png)](https://david-dm.org/pifantastic/ab#info=devDependencies)
 
 # ab
 
