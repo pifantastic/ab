@@ -16,6 +16,14 @@ Storage.prototype.set = function (key, val) {
   localStorage.setItem(key, JSON.stringify(val));
 };
 
+Storage.prototype.del = function (key) {
+  localStorage.removeItem(key);
+};
+
+Storage.prototype.clear = function () {
+  localStorage.clear();
+};
+
 /**
  * [get description]
  * @param  {[type]} key          [description]
@@ -38,6 +46,32 @@ Storage.prototype.get = function (key, defaultValue) {
   }
 };
 
+
+var Events = {
+
+  _events: {},
+
+  trigger: function (name) {
+    var args = Array.prototype.slice.call(arguments, 1);
+
+    for (var event in this._events) {
+      if (this._events.hasOwnProperty(event)) {
+        for (var x = 0, len = this._events[name].length; x < len; x++) {
+          this._events[name][x].apply(window, args);
+        }
+      }
+    }
+  },
+
+  on: function (name, callback) {
+    if (!this._events.hasOwnProperty(name)) {
+      this._events[name] = [];
+    }
+
+    this._events[name].push(callback);
+  }
+
+};
 
 /**
  * [Slice description]
@@ -205,5 +239,11 @@ window.ab = function (name, traffic) {
 window.ab.config = {
   STORAGE_PREFIX: 'ab:'
 };
+
+// Exposed mostly for testing purposes.
+window.ab.Test = Test;
+window.ab.Slice = Slice;
+window.ab.Storage = Storage;
+window.ab.Events = Events;
 
 })();
