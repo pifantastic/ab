@@ -1,11 +1,25 @@
 
+/**
+ * [Storage description]
+ */
 function Storage () {}
 
+/**
+ * [set description]
+ * @param {[type]} key [description]
+ * @param {[type]} val [description]
+ */
 Storage.prototype.set = function (key, val) {
   key = window.ab.config.STORAGE_PREFIX + key;
   localStorage.setItem(key, JSON.stringify(val));
 };
 
+/**
+ * [get description]
+ * @param  {[type]} key          [description]
+ * @param  {[type]} defaultValue [description]
+ * @return {[type]}              [description]
+ */
 Storage.prototype.get = function (key, defaultValue) {
   key = window.ab.config.STORAGE_PREFIX + key;
   var value = localStorage.getItem(key);
@@ -32,11 +46,21 @@ function Slice (name) {
   this._ready = [];
 }
 
+/**
+ * [test description]
+ * @param  {[type]} test [description]
+ * @return {[type]}      [description]
+ */
 Slice.prototype.test = function (test) {
   this.test = test;
   return this;
 };
 
+/**
+ * [ready description]
+ * @param  {Function} callback [description]
+ * @return {[type]}            [description]
+ */
 Slice.prototype.ready = function (callback) {
   if (typeof callback === 'undefined') {
     for (var x = 0, len = this._ready.length; x < len; x++) {
@@ -68,6 +92,11 @@ function Test (name, traffic) {
   this._ready = [];
 }
 
+/**
+ * [slices description]
+ * @param  {[type]} slices [description]
+ * @return {[type]}        [description]
+ */
 Test.prototype.slices = function (slices) {
   for (var x = 0, len = slices.length; x < len; x++) {
     this.add(new Slice(slices[x]).test(this));
@@ -75,11 +104,20 @@ Test.prototype.slices = function (slices) {
   return this;
 };
 
+/**
+ * [add description]
+ * @param {[type]} slice [description]
+ */
 Test.prototype.add = function (slice) {
   this._slices[slice.name] = slice;
   return this;
 };
 
+/**
+ * [slice description]
+ * @param  {[type]} name [description]
+ * @return {[type]}      [description]
+ */
 Test.prototype.slice = function (name) {
   if (typeof name !== 'undefined') {
     return this._slices[name];
@@ -88,6 +126,10 @@ Test.prototype.slice = function (name) {
   return this._slice;
 };
 
+/**
+ * [run description]
+ * @return {[type]} [description]
+ */
 Test.prototype.run = function () {
   // List of all slice names.
   var slices = Object.keys(this._slices);
@@ -118,6 +160,11 @@ Test.prototype.run = function () {
   return this;
 };
 
+/**
+ * [ready description]
+ * @param  {Function} callback [description]
+ * @return {[type]}            [description]
+ */
 Test.prototype.ready = function (callback) {
   if (typeof callback === 'undefined') {
     for (var x = 0, len = this._ready.length; x < len; x++) {
@@ -142,9 +189,17 @@ Test.prototype.ready = function (callback) {
  * @return {[type]}         [description]
  */
 window.ab = function (name, traffic) {
+  if (typeof traffic === 'undefined') {
+    traffic = 1;
+  }
+
   return new Test(name, traffic);
 };
 
+/**
+ * [config description]
+ * @type {Object}
+ */
 window.ab.config = {
   STORAGE_PREFIX: 'ab:'
 };
