@@ -2,48 +2,139 @@
 (function() {
 
 /**
- * [Storage description]
+ * Test for storage support.
+ *
+ * @param {String} type 'session' or 'local'
  */
-function Storage () {}
-
-/**
- * [set description]
- * @param {[type]} key [description]
- * @param {[type]} val [description]
- */
-Storage.prototype.set = function (key, val) {
-  key = window.ab.config.STORAGE_PREFIX + key;
-  localStorage.setItem(key, JSON.stringify(val));
-};
-
-Storage.prototype.del = function (key) {
-  localStorage.removeItem(key);
-};
-
-Storage.prototype.clear = function () {
-  localStorage.clear();
-};
-
-/**
- * [get description]
- * @param  {[type]} key          [description]
- * @param  {[type]} defaultValue [description]
- * @return {[type]}              [description]
- */
-Storage.prototype.get = function (key, defaultValue) {
-  key = window.ab.config.STORAGE_PREFIX + key;
-  var value = localStorage.getItem(key);
-
-  if (value === null && typeof defaultValue !== 'undefined') {
-    return defaultValue;
-  }
-
+var storageSupported = function(type) {
+  var test = 'test';
   try {
-    return JSON.parse(value);
+    window[type + 'Storage'].setItem(test, test);
+    window[type + 'Storage'].removeItem(test);
+    return true;
   }
   catch (e) {
+    return false;
+  }
+};
+
+/**
+ * https://gist.github.com/remy/350433
+ *
+ * @param {String} type 'session' or 'local'
+ */
+var Storage = function (type) {
+
+  function createCookie(name, value, days) {
+    var date;
+    var expires;
+
+    if (days) {
+      date = new Date();
+      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+      expires = '; expires=' + date.toGMTString();
+    }
+    else {
+      expires = '';
+    }
+
+    document.cookie = name + '=' + value + expires + '; path=/';
+  }
+
+  function readCookie(name) {
+    var nameEQ = name + '=';
+    var ca = document.cookie.split(';');
+    var i;
+    var c;
+
+    for (i = 0; i < ca.length; i++) {
+      c = ca[i];
+
+      while (c.charAt(0) === ' ') {
+        c = c.substring(1, c.length);
+      }
+
+      if (c.indexOf(nameEQ) === 0) {
+        return c.substring(nameEQ.length, c.length);
+      }
+    }
+
     return null;
   }
+
+  function setData(data) {
+    data = JSON.stringify(data);
+    if (type === 'session') {
+      window.name = data;
+    }
+    else {
+      createCookie('localStorage', data, 365);
+    }
+  }
+
+  function clearData() {
+    if (type === 'session') {
+      window.name = '';
+    }
+    else {
+      createCookie('localStorage', '', 365);
+    }
+  }
+
+  function getData() {
+    var data = type === 'session' ? window.name : readCookie('localStorage');
+    try {
+      return data ? JSON.parse(data) : {};
+    }
+    catch (e) {
+      return {};
+    }
+  }
+
+  // initialise if there's already data
+  var data = getData();
+
+  return {
+    length: 0,
+
+    clear: function () {
+      data = {};
+      this.length = 0;
+      clearData();
+    },
+
+    getItem: function (key, defaultValue) {
+      return data[key] === undefined ?
+        (typeof defaultValue === 'undefined' ? null : defaultValue) :
+        data[key];
+    },
+
+    key: function (i) {
+      // not perfect, but works
+      var ctr = 0;
+      for (var k in data) {
+        if (ctr == i) {
+          return k;
+        }
+        else {
+          ctr += 1;
+        }
+      }
+      return null;
+    },
+
+    removeItem: function (key) {
+      delete data[key];
+      this.length -= 1;
+      setData(data);
+    },
+
+    setItem: function (key, value) {
+      data[key] = value + ''; // forces the value to a string
+      this.length += 1;
+      setData(data);
+    }
+  };
 };
 
 
@@ -122,7 +213,7 @@ Slice.prototype.ready = function (callback) {
 function Test (name, traffic) {
   this.name = name;
   this.traffic = traffic;
-  this.storage = new Storage();
+  this.storage = storageSupported('local') ? window.localStorage : new Storage('local');
   this._slices = {};
   this._slice = null;
   this._ready = [];
@@ -171,24 +262,24 @@ Test.prototype.run = function () {
   var slices = Object.keys(this._slices);
 
   // Check if user was already not sliced into this test.
-  if (this.storage.get(this.name) === false) {
+  if (this.storage.getItem(this.name) === false) {
     return this;
   }
   // See if the user has already been put into a slice.
-  else if (this.storage.get(this.name) !== null) {
-    this._slice = this.slice(this.storage.get(this.name));
+  else if (this.storage.getItem(this.name) !== null) {
+    this._slice = this.slice(this.storage.getItem(this.name));
     this.ready();
     this._slice.ready();
   }
   // See if this user should be sliced into this test at all.
   else if (Math.random() > this.traffic) {
-    this.storage.set(this.name, false);
+    this.storage.setItem(this.name, false);
   }
   // Chose a slice for the user.
   else {
     var index = Math.floor(Math.random() / (1.0 / slices.length));
     this._slice = this.slice(slices[index]);
-    this.storage.set(this.name, this._slice.name);
+    this.storage.setItem(this.name, this._slice.name);
     this.ready();
     this._slice.ready();
   }
