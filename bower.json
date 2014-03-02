@@ -1,0 +1,22 @@
+{
+  "name": "ab",
+  "main": "index.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/pifantastic/ab",
+  "authors": [
+    "Aaron Forsander <aaron.forsander@gmail.com>"
+  ],
+  "description": "a javascript a/b testing library",
+  "keywords": [
+    "testing"
+  ],
+  "license": "ISC",
+  "private": false,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

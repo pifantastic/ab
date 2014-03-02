@@ -5,6 +5,7 @@ describe('ab', function () {
 
   beforeEach(function () {
     localStorage.clear();
+    new ab.Storage('local').clear();
   });
 
   it('should slice you into a test', function () {
@@ -46,15 +47,15 @@ describe('ab', function () {
 
 });
 
-describe('Event', function () {
+describe('Events', function () {
 
   it('should fire events with arguments', function () {
     var spy = sinon.spy();
 
-    ab.Events.on('test', spy);
-    ab.Events.on('test', spy);
+    ab.events.on('test', spy);
+    ab.events.on('test', spy);
 
-    ab.Events.trigger('test', 1, 2, 3);
+    ab.events.trigger('test', 1, 2, 3);
 
     expect(spy.calledWith(1, 2, 3)).to.equal(true);
     expect(spy.calledTwice).equal(true);
@@ -82,6 +83,31 @@ describe('Storage', function () {
 
     storage.setItem('foo', 'bye!');
     expect(storage.getItem('foo', 'hi!')).to.equal('bye!');
+  });
+
+});
+
+describe('Probability', function () {
+
+  it('should slice within error margins', function () {
+    var trials = 10000;
+    var target = 0.5;
+    var marginOfError = 0.01;
+    var results = {};
+
+    for (var x = 0; x < trials; x++) {
+      new ab.Storage('local').removeItem('ab:test');
+      localStorage.removeItem('ab:test');
+
+      ab('test').slices(['a', 'b']).run().ready(function (slice) {
+        results[slice.name] = results[slice.name] ? ++results[slice.name] : 1;
+      });
+    }
+
+    Object.keys(results).forEach(function (slice) {
+      expect(Math.abs((results[slice] / trials) - target)).to.be.lessThan(marginOfError);
+    });
+
   });
 
 });
