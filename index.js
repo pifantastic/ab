@@ -104,6 +104,7 @@ var Storage = function (type) {
     },
 
     getItem: function (key, defaultValue) {
+      key = ab.config.STORAGE_PREFIX + key;
       return data[key] === undefined ?
         (typeof defaultValue === 'undefined' ? null : defaultValue) :
         data[key];
@@ -124,13 +125,13 @@ var Storage = function (type) {
     },
 
     removeItem: function (key) {
-      delete data[key];
+      delete data[ab.config.STORAGE_PREFIX + key];
       this.length -= 1;
       setData(data);
     },
 
     setItem: function (key, value) {
-      data[key] = value + ''; // forces the value to a string
+      data[ab.config.STORAGE_PREFIX + key] = value + ''; // forces the value to a string
       this.length += 1;
       setData(data);
     }
@@ -213,7 +214,7 @@ Slice.prototype.ready = function (callback) {
 function Test (name, traffic) {
   this.name = name;
   this.traffic = traffic;
-  this.storage = storageSupported('local') ? window.localStorage : new Storage('local');
+  this._storage = storageSupported('local') ? window.localStorage : new Storage('local');
   this._slices = {};
   this._slice = null;
   this._ready = [];
@@ -262,24 +263,24 @@ Test.prototype.run = function () {
   var slices = Object.keys(this._slices);
 
   // Check if user was already not sliced into this test.
-  if (this.storage.getItem(this.name) === false) {
+  if (this._storage.getItem(this.name) === false) {
     return this;
   }
   // See if the user has already been put into a slice.
-  else if (this.storage.getItem(this.name) !== null) {
-    this._slice = this.slice(this.storage.getItem(this.name));
+  else if (this._storage.getItem(this.name) !== null) {
+    this._slice = this.slice(this._storage.getItem(this.name));
     this.ready();
     this._slice.ready();
   }
   // See if this user should be sliced into this test at all.
   else if (Math.random() > this.traffic) {
-    this.storage.setItem(this.name, false);
+    this._storage.setItem(this.name, false);
   }
   // Chose a slice for the user.
   else {
     var index = Math.floor(Math.random() / (1.0 / slices.length));
     this._slice = this.slice(slices[index]);
-    this.storage.setItem(this.name, this._slice.name);
+    this._storage.setItem(this.name, this._slice.name);
     this.ready();
     this._slice.ready();
   }
@@ -335,6 +336,6 @@ window.ab.config = {
 window.ab.Test = Test;
 window.ab.Slice = Slice;
 window.ab.Storage = Storage;
-window.ab.Events = Events;
+window.ab.events = Events;
 
 })();
