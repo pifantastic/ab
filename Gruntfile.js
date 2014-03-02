@@ -5,6 +5,39 @@ module.exports = function (grunt) {
 
     pkg: grunt.file.readJSON('package.json'),
 
+    license: grunt.file.read('LICENSE'),
+
+    banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
+      '<%= grunt.template.today("yyyy-mm-dd") %> */\n',
+
+    clean: {
+      build: {
+        src: 'dist'
+      }
+    },
+
+    concat: {
+      options: {
+        stripBanners: true,
+        banner: '<%= banner %>',
+      },
+      dist: {
+        src: ['index.js'],
+        dest: 'dist/ab.js',
+      },
+    },
+
+    uglify: {
+      build: {
+        options: {
+          banner: '<%= banner %>'
+        },
+        files: {
+          'dist/ab.min.js': ['index.js']
+        }
+      }
+    },
+
     connect: {
       test: {
         options: {
@@ -19,8 +52,15 @@ module.exports = function (grunt) {
         log: true,
         logErrors: true
       },
-      test: {
-        src: ['tests/index.html'],
+      dev: {
+        src: ['tests/dev.html'],
+        options: {
+          reporter: 'Spec',
+          run: true
+        }
+      },
+      build: {
+        src: ['tests/build.html'],
         options: {
           reporter: 'Spec',
           run: true
@@ -47,11 +87,16 @@ module.exports = function (grunt) {
 
   });
 
+  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-copy');
+  grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-saucelabs');
   grunt.loadNpmTasks('grunt-mocha');
 
   grunt.registerTask('default', ['test']);
   grunt.registerTask('test', ['connect', 'saucelabs-mocha']);
+  grunt.registerTask('build', ['clean', 'uglify', 'concat']);
 
 };
