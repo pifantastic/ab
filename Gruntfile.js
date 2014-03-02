@@ -71,7 +71,7 @@ module.exports = function (grunt) {
     'saucelabs-mocha': {
       test: {
         options: {
-          urls: ['http://127.0.0.1:9999/tests/index.html'],
+          urls: ['http://127.0.0.1:9999/tests/sauce.html'],
           tunnelTimeout: 5,
           build: process.env.TRAVIS_JOB_ID,
           concurrency: 3,
@@ -96,7 +96,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-mocha');
 
   grunt.registerTask('default', ['test']);
-  grunt.registerTask('test', ['connect', 'saucelabs-mocha']);
+  grunt.registerTask('test', ['mocha', 'connect', 'saucelabs-mocha']);
   grunt.registerTask('build', ['clean', 'uglify', 'concat']);
 
 };
