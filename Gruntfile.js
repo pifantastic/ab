@@ -96,7 +96,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-mocha');
 
   grunt.registerTask('default', ['test']);
-  grunt.registerTask('test', ['mocha', 'connect', 'saucelabs-mocha']);
+  grunt.registerTask('test', ['connect', 'saucelabs-mocha']);
   grunt.registerTask('build', ['clean', 'uglify', 'concat']);
 
 };
