@@ -5,19 +5,17 @@
   <link rel="stylesheet" href="lib/mocha.css" />
 </head>
 <body>
+  <a href="dev.html">dev</a> | <a href="build.html">build</a>
   <div id="mocha"></div>
   <script src="lib/jquery.js"></script>
   <script src="lib/sinon.js"></script>
   <script src="lib/chai.js"></script>
   <script src="lib/mocha.js"></script>
   <script>mocha.setup('bdd')</script>
-  <script src="../index.js"></script>
+  <script src="../dist/ab.min.js"></script>
   <script src="index.js"></script>
   <script>
     onload = function() {
-      // mocha.checkLeaks();
-      // mocha.globals(['jQuery']);
-
       var runner = mocha.run();
 
       var failedTests = [];
