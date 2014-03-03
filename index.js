@@ -205,6 +205,7 @@ Slice.prototype.ready = function (callback) {
   return this;
 };
 
+var _tests = {};
 
 /**
  * [Test description]
@@ -218,6 +219,8 @@ function Test (name, traffic) {
   this._slices = {};
   this._slice = null;
   this._ready = [];
+
+  _tests[this.name] = this;
 }
 
 /**
