@@ -1,4 +1,4 @@
-/*! ab - v0.0.1 - 2014-03-08 */
+/*! ab - v0.0.2 - 2014-03-08 */
 
 (function() {
 
@@ -454,7 +454,7 @@ ab.events = new Events();
  *
  * @type {String}
  */
-ab.version = '0.0.1';
+ab.version = '0.0.2';
 
 /**
  * Global ab configuration
