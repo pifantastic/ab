@@ -1,0 +1,60 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ab Examples</title>
+  <style>
+    * { font-family: arial; }
+    section { padding: 20px; }
+    header.orange { color: orange; }
+    header.blue { color: blue; }
+  </style>
+</head>
+<body>
+  <button id="clear">clear test data</button>
+  <header>
+    <h1>ab examples</h1>
+  </header>
+  <section id="script"></section>
+  <section id="style"></section>
+
+  <script src="../index.js"></script>
+  <script>
+    ab.events.on('start', function (test) {
+      console.info('sliced into %s for the %s test', test.slice.name, test.name);
+    });
+
+    ab.events.on('run', function (test) {
+      console.info('%s test is using slice %s', test.name, test.slice.name);
+    });
+
+    ab('header').slices('orange', 'blue').run(function () {
+      document.querySelector('header').classList.add(this.slice.name);
+    });
+
+    ab('script', 0.5).slices('a.js', 'b.js').run(function () {
+      if (this.slice.name !== 'control') {
+        this.script(this.slice.name);
+        document.querySelector('#script').innerHTML = 'Loaded ' + this.slice.name;
+      }
+      else {
+        document.querySelector('#script').innerHTML = 'Control group, doing nothing!';
+      }
+    });
+
+    ab('style', 0.5).slices('a.css', 'b.css').run(function () {
+      if (this.slice.name !== 'control') {
+        this.style(this.slice.name);
+        document.querySelector('#style').innerHTML = 'Loaded ' + this.slice.name;
+      }
+      else {
+        document.querySelector('#style').innerHTML = 'Control group, doing nothing!';
+      }
+    });
+
+    document.querySelector('#clear').addEventListener('click', function () {
+      ab.clear();
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>

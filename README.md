@@ -7,23 +7,31 @@ A javascript a/b testing library.
 ## Usage
 
 ```javascript
-// Create a new test that goes to 50% of traffic.
-var test = ab('my-sweet-button', 0.50).slices(['blue', 'green']);
-
-test.ready(function (slice) {
-	console.log(slice.name, 'was chosen!');
-	$('#sweet-button').addClass(slice.name);
+// Create a new test with two slices that goes to 50% of traffic.
+ab('my-sweet-button', 0.50).slices('blue', 'green').run(function () {
+  $('#sweet-button').addClass(this.slice.name);
 });
 ```
 
-## TODO
+### Reporting events
 
-Wire into analytics systems. Initial idea is to have a global event bus that analytics adapters can listen on. They could then fire their own events into whatever analytics sytem.
+ab has a global event bus you can subscribe to.
+
+#### start
+
+Fired when a test is started for the first time.
+
+#### Example
+
+```javascript
+ab.events('start', function (test) {
+  analytics.track('ab test:' + test.name + ':' + test.slice.name);
+});
+```
 
 ## License
 
 Copyright (c) 2014, Aaron Forsander
-
 
 Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
 

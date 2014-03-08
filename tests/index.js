@@ -1,111 +1,180 @@
+/* jshint loopfunc: true */
 
 var expect = chai.expect;
 
 describe('ab', function () {
 
-  beforeEach(function () {
-    localStorage.clear();
-    new ab.Storage('local').clear();
+  beforeEach(ab.clear);
+
+  it('should create a new test', function () {
+    expect(ab('test')).to.be.an('object');
   });
 
-  it('should slice you into a test', function () {
-    var test = ab('header', 0.99);
-
-    test.slices(['blue', 'green']).run();
-
-    expect(['blue', 'green']).to.contain(test.slice().name);
+  it('should set traffic when supplied as the second argument', function () {
+    expect(ab('test', 0.1337).traffic).to.equal(0.1337);
   });
 
-  it('should not slice you into a test if traffic is 0', function () {
-    var test = ab('test', 0).slices(['a']);
-
-    expect(test.slice()).to.equal(null);
+  it('should return a previously created test', function () {
+    expect(ab('test')).to.deep.equal(ab('test'));
   });
 
-  it('should fire the ready callbacks', function () {
-    var spy = sinon.spy();
+  describe('noConflict()', function () {
 
-    var test = ab('test', 0.99).slices(['a']);
+    it('should restore window.ab to its previous value', function () {
+      var ab = window.ab.noConflict();
+      expect(window.ab).to.be.an('undefined');
+      window.ab = ab;
+    });
 
-    test.ready(spy);
-    test.slice('a').ready(spy);
-    test.run();
-
-    expect(spy.calledTwice).to.equal(true);
   });
 
-  it('should fire ready callbacks when they\'re bound late', function () {
-    var spy = sinon.spy();
+  describe('Test', function () {
 
-    var test = ab('test', 1).slices(['a']).run();
+    describe('run()', function () {
 
-    test.ready(spy);
-    test.slice().ready(spy);
-
-    expect(spy.calledTwice).to.equal(true);
-  });
-
-});
-
-describe('Events', function () {
-
-  it('should fire events with arguments', function () {
-    var spy = sinon.spy();
-
-    ab.events.on('test', spy);
-    ab.events.on('test', spy);
-
-    ab.events.trigger('test', 1, 2, 3);
-
-    expect(spy.calledWith(1, 2, 3)).to.equal(true);
-    expect(spy.calledTwice).equal(true);
-  });
-
-});
-
-describe('Storage', function () {
-
-  beforeEach(function () {
-    new ab.Storage('local').clear();
-  });
-
-  it('should set/get values', function () {
-    var storage = new ab.Storage('local');
-
-    storage.setItem('foo', 'bar');
-    expect(storage.getItem('foo')).to.equal('bar');
-  });
-
-  it('should return default values for missing keys', function () {
-    var storage = new ab.Storage('local');
-
-    expect(storage.getItem('foo', 'hi!')).to.equal('hi!');
-
-    storage.setItem('foo', 'bye!');
-    expect(storage.getItem('foo', 'hi!')).to.equal('bye!');
-  });
-
-});
-
-describe('Probability', function () {
-
-  it('should slice within error margins', function () {
-    var trials = 10000;
-    var target = 0.5;
-    var marginOfError = 0.01;
-    var results = {};
-
-    for (var x = 0; x < trials; x++) {
-      new ab.Storage('local').removeItem('ab:test');
-      localStorage.removeItem('ab:test');
-
-      ab('test').slices(['a', 'b']).run().ready(function (slice) {
-        results[slice.name] = results[slice.name] ? ++results[slice.name] : 1;
+      it('should slice you into a test', function () {
+        var test = ab('test').slices('blue', 'green').run();
+        expect(['blue', 'green']).to.contain(test.slice.name);
       });
-    }
 
-    Object.keys(results).forEach(function (slice) {
-      expect(Math.abs((results[slice] / trials) - target)).to.be.lessThan(marginOfError);
+      it('should not slice you into a test if traffic is 0', function () {
+        expect(ab('test', 0).slices(['a']).run().slice.name).to.equal('control');
+      });
+
+      it('should fire the run callback', function () {
+        var spy = sinon.spy();
+        ab('test').slices('a', 'b').run(spy);
+        expect(spy.calledOnce).to.equal(true);
+      });
+
+      it('should fire the run callback with the test as the context', function () {
+        var test = ab('test').slices('a', 'b');
+        test.run(function () {
+          expect(test).to.deep.equal(this);
+        });
+      });
+
+      it('should trigger the run event', function () {
+        var spy = sinon.spy();
+        ab.events.on('run', spy);
+        var test = ab('test').slices('a', 'b').run();
+        expect(spy.calledWith(test)).to.equal(true);
+        expect(spy.calledOnce).to.equal(true);
+      });
+
+      it('should trigger the start event on first slice', function () {
+        var spy = sinon.spy();
+        ab.events.on('start', spy);
+        var test = ab('test').slices('a', 'b').run();
+        expect(spy.calledWith(test)).to.equal(true);
+        expect(spy.calledOnce).to.equal(true);
+      });
+
+      it('should not trigger the start event on subsequent slices', function () {
+        var test = ab('test').slices('a', 'b').run();
+        var spy = sinon.spy();
+        ab.events.on('start', spy);
+        test.run();
+        expect(spy.callCount).to.equal(0);
+      });
+
+      it('should slice within error margins', function () {
+        var trials = 10000, results = {};
+        var test = ab('test', 0.75).slices('a', 'b', 'c');
+
+        for (var x = 0; x < trials; x++) {
+          localStorage.removeItem('ab:test');
+
+          test.run(function () {
+            results[this.slice.name] = results[this.slice.name] ? ++results[this.slice.name] : 1;
+          });
+        }
+
+        ['a', 'b', 'c', 'control'].forEach(function (slice) {
+          var error = (results[slice] / trials) - 0.25;
+          expect(error).to.be.within(-0.01, 0.01);
+        });
+      });
+
+      it('should allow the URL to override the slice', function () {
+        var slices = ['a', 'b', 'c', 'd', 'e'];
+        var test = ab('test').slices(slices);
+
+        slices.forEach(function (slice) {
+          window.location.hash = 'ab:test=' + slice;
+          test.run();
+          expect(test.slice.name).to.equal(slice);
+        });
+
+        window.location.hash = '';
+      });
+
+    });
+
+    describe('slices()', function () {
+
+      it('should accept an array or multiple arguments', function () {
+        var test1 = ab('test1').slices('blue', 'green').run();
+        expect(Object.keys(test1._slices)).to.deep.equal(['blue', 'green']);
+
+        var test2 = ab('test2').slices(['red', 'yellow']).run();
+        expect(Object.keys(test2._slices)).to.deep.equal(['red', 'yellow']);
+      });
+
+      it('should throw an error if adding slices after running', function () {
+        expect(function () {
+          ab('test').slices('blue').run().slices('green');
+        }).to.throw(Error);
+      });
+
+    });
+
+    describe('script()', function () {
+
+      it('should load the specified script', function () {
+        ab('test').run(function () {
+          this.script('../lib/example.js');
+          var $script = $('script[src="../lib/example.js"]').remove();
+          expect($script.length).to.equal(1);
+          expect($script.prop('async')).to.equal(true);
+        });
+      });
+
+      it('should load the specified script synchronously', function () {
+        ab('test').run(function () {
+          this.script('../lib/example.js', false);
+          var $script = $('script[src="../lib/example.js"]').remove();
+          expect($script.length).to.equal(1);
+          expect($script.prop('async')).to.equal(false);
+        });
+      });
+
+    });
+
+    describe('style()', function () {
+
+      it('should load the specified style', function () {
+        ab('test').run(function () {
+          this.style('../lib/example.css');
+          var $link = $('link[href="../lib/example.css"]').remove();
+          expect($link.length).to.equal(1);
+        });
+      });
+
+    });
+
+  });
+
+  describe('Events', function () {
+
+    it('should fire all handlers for an event', function () {
+      var spy = sinon.spy();
+      var events = new ab.Events();
+      events.on('test', spy);
+      events.on('test', spy);
+      events.trigger('test', 1, 2, 3);
+      expect(spy.calledWith(1, 2, 3)).to.equal(true);
+      expect(spy.calledTwice).to.equal(true);
     });
 
   });
