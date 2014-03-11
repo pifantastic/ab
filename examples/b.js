@@ -1,1 +1,1 @@
-console.log('b.js');
+document.querySelector('#three').style.backgroundColor = 'aqua';

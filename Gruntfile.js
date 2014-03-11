@@ -67,7 +67,7 @@ module.exports = function (grunt) {
       build: {
         src: ['tests/runners/build.html'],
         options: {
-          reporter: 'Spec',
+          reporter: 'Nyan',
           run: true
         }
       }
@@ -117,7 +117,7 @@ module.exports = function (grunt) {
 
   });
 
-  grunt.registerTask('size', function () {
+  grunt.registerTask('size', 'Measure the size of the ab release.', function () {
     var done = this.async();
     var files = ['dist/ab.min.js', 'dist/ab.js'];
     var count = 0;
@@ -136,14 +136,26 @@ module.exports = function (grunt) {
     });
   });
 
-  grunt.registerTask('version', function () {
+  /**
+   * Using the version in the package.json, set the correct version
+   * of the current release files and the bower config.
+   */
+  grunt.registerTask('version', 'Set the version of the ab release.', function () {
     var files = ['dist/ab.min.js', 'dist/ab.js'];
+    var version = grunt.config('version');
 
+    // Set the version in the release files.
     files.forEach(function (file) {
-      var content = grunt.file.read(file).replace('__VERSION__', grunt.config('version'));
+      var content = grunt.file.read(file).replace('__VERSION__', version);
       grunt.file.write(file, content);
-      grunt.log.writeln('%s version set to %s', file, grunt.config('version').magenta);
+      grunt.log.writeln('%s version set to %s', file, version.magenta);
     });
+
+    // Set the version in the bower config.
+    var bower = grunt.file.readJSON('bower.json');
+    bower.version = version;
+    grunt.file.write('bower.json', JSON.stringify(bower, ' ', 2));
+    grunt.log.writeln('bower.json version set to %s', version.magenta);
   });
 
   grunt.loadNpmTasks('grunt-contrib-concat');
@@ -158,7 +170,7 @@ module.exports = function (grunt) {
   grunt.registerTask('default', ['test']);
   grunt.registerTask('lint', ['jshint']);
   grunt.registerTask('test', ['lint', 'mocha:dev']);
-  grunt.registerTask('build', ['clean', 'uglify', 'concat', 'version', 'mocha:build', 'size']);
-  grunt.registerTask('release', ['build', 'copy']);
+  grunt.registerTask('build', ['clean', 'uglify', 'concat', 'mocha:build', 'size']);
+  grunt.registerTask('release', ['build', 'copy', 'version']);
 
 };

@@ -5,8 +5,20 @@
   <style>
     * { font-family: arial; }
     section { padding: 20px; }
-    header.orange { color: orange; }
-    header.blue { color: blue; }
+    .orange { background-color: orange; }
+    .blue { background-color: blue; }
+    .control { background-color: #DDD; }
+    pre {
+      font-family: monospace;
+      min-height: 20px;
+      padding: 19px;
+      margin-bottom: 20px;
+      background-color: #f5f5f5;
+      border: 1px solid #e3e3e3;
+      border-radius: 4px;
+      -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+              box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+    }
   </style>
 </head>
 <body>
@@ -14,43 +26,65 @@
   <header>
     <h1>ab examples</h1>
   </header>
-  <section id="script"></section>
-  <section id="style"></section>
+  <pre id="log"></pre>
+  <section id="one"></section>
+  <section id="two"></section>
+  <section id="three"></section>
+  <section id="four"></section>
 
   <script src="../index.js"></script>
   <script>
+    // Log a message to the DOM.
+    var log = function (message) {
+      Array.prototype.slice.call(arguments, 1).forEach(function (arg) {
+        message = message.replace('%s', arg);
+      });
+      document.querySelector('#log').textContent += message + '\n';
+    };
+
+    /**
+     * Log all 'start' events.
+     */
     ab.events.on('start', function (test) {
-      console.info('sliced into %s for the %s test', test.slice.name, test.name);
+      log('sliced into %s for the %s test', test.slice.name, test.name);
     });
 
+    /**
+     * Log all 'run' events.
+     */
     ab.events.on('run', function (test) {
-      console.info('%s test is using slice %s', test.name, test.slice.name);
+      log('"%s" test is using slice %s', test.name, test.slice.name);
     });
 
-    ab('header').slices('orange', 'blue').run(function () {
-      document.querySelector('header').classList.add(this.slice.name);
+    /**
+     * Two slices, to 75% of traffic.
+     */
+    ab('one', 0.75).slices('orange', 'blue').run(function () {
+      document.querySelector('#one').classList.add(this.slice.name);
+      document.querySelector('#one').textContent = '#1 ' + this.slice.name;
     });
 
-    ab('script', 0.5).slices('a.js', 'b.js').run(function () {
-      if (this.slice.name !== 'control') {
-        this.script(this.slice.name);
-        document.querySelector('#script').innerHTML = 'Loaded ' + this.slice.name;
-      }
-      else {
-        document.querySelector('#script').innerHTML = 'Control group, doing nothing!';
-      }
+    /**
+     * Two slices to 100% of traffic. Load a different style sheet
+     * depending on which slice is chosen.
+     */
+    ab('two').slices('a.css', 'b.css').run(function () {
+      this.style(this.slice.name);
+      document.querySelector('#two').textContent = '#2 ' + this.slice.name;
     });
 
-    ab('style', 0.5).slices('a.css', 'b.css').run(function () {
-      if (this.slice.name !== 'control') {
-        this.style(this.slice.name);
-        document.querySelector('#style').innerHTML = 'Loaded ' + this.slice.name;
-      }
-      else {
-        document.querySelector('#style').innerHTML = 'Control group, doing nothing!';
-      }
+    /**
+     * Two slices to 100% of traffic. Load a different script
+     * depending on which slice is chosen.
+     */
+    ab('three').slices('a.js', 'b.js').run(function () {
+      this.script(this.slice.name);
+      document.querySelector('#three').textContent = '#3 ' + this.slice.name;
     });
 
+    /**
+     * Clear test data.
+     */
     document.querySelector('#clear').addEventListener('click', function () {
       ab.clear();
       window.location.reload();

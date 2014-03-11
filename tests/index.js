@@ -109,6 +109,17 @@ describe('ab', function () {
         window.location.hash = '';
       });
 
+      it('should remember your slice', function () {
+        var test = ab('test').slices('a', 'b', 'c', 'd', 'e', 'f').run();
+        var slice = test.slice;
+
+        var every = Array(100).every(function () {
+          return test.run().slice.name === slice.name;
+        });
+
+        expect(every).to.equal(true);
+      });
+
     });
 
     describe('slices()', function () {
@@ -160,6 +171,46 @@ describe('ab', function () {
           expect($link.length).to.equal(1);
         });
       });
+
+    });
+
+    describe('hasSlice()', function () {
+
+      it('should return true if the test has the slice', function () {
+        var test = ab('test').slices('a', 'b', 'c');
+        expect(test.hasSlice('b')).to.equal(true);
+      });
+
+      it('should return false if the test does not have the slice', function () {
+        var test = ab('test').slices('a', 'b', 'c');
+        expect(test.hasSlice('foo')).to.equal(false);
+      });
+
+      it('should return true for tests with control slices', function () {
+        var test = ab('test', 0.5).slices('a', 'b', 'c');
+        expect(test.hasSlice('control')).to.equal(true);
+      });
+
+      it('should return false for tests without control slices', function () {
+        var test = ab('test').slices('a', 'b', 'c');
+        expect(test.hasSlice('control')).to.equal(false);
+      });
+
+    });
+
+    describe('getSlice()', function () {
+
+      it('should get the slice object with the given name', function () {
+        var test = ab('test').slices('a', 'b', 'c');
+        expect(test.getSlice('a').name).to.equal('a');
+        expect(test.getSlice('control').name).to.equal('control');
+      });
+
+    });
+
+    describe('urlSlice', function () {
+
+      it('TODO', function () {});
 
     });
 

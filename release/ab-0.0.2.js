@@ -1,13 +1,98 @@
-/*! ab - v0.0.2 - 2014-03-08 */
+/*! ab - v0.0.2 - 2014-03-11 */
 
 (function() {
+
+/**
+ * Test registry.
+ *
+ * @type {Object}
+ */
+var _tests = {};
+
+/**
+ * Create/retrieve and ab test.
+ *
+ * @param  {String} name
+ * @param  {Float} traffic
+ * @return {Test}
+ */
+var ab = function (name, traffic, slices) {
+  if (_tests.hasOwnProperty(name)) {
+    return _tests[name];
+  }
+
+  if (typeof traffic === 'undefined') {
+    traffic = 1;
+  }
+
+  _tests[name] = new Test(name, traffic);
+
+  if (slices && slices.length) {
+    _tests[name].slices(slices);
+  }
+
+  return _tests[name];
+};
+
+/**
+ * Clear all tests from local storage.
+ */
+ab.clear = function () {
+  for (var test in _tests) {
+    if (_tests.hasOwnProperty(test)) {
+      _tests[test].clear();
+    }
+  }
+  _tests = {};
+};
+
+/**
+ * Save a reference to whatever previously occupied the global
+ * 'ab' variable.
+ *
+ * @type {Object}
+ */
+var _ab = window.ab;
+
+/**
+ * Restore the global 'ab' variable. Return the ab object.
+ *
+ * @return {Object}
+ */
+ab.noConflict = function () {
+  window.ab = _ab;
+  return ab;
+};
+
+/**
+ * Event bus.
+ *
+ * @type {Events}
+ */
+ab.events = new Events();
+
+/**
+ * ab version.
+ *
+ * @type {String}
+ */
+ab.version = '__VERSION__';
+
+/**
+ * Global ab configuration
+ *
+ * @type {Object}
+ */
+ab.config = {
+  STORAGE_PREFIX: 'ab:'
+};
 
 /**
  * Test for storage support.
  *
  * @param {String} type 'session' or 'local'
  */
-var storageSupported = function(type) {
+var storageSupported = function (type) {
   var test = 'test';
   try {
     window[type + 'Storage'].setItem(test, test);
@@ -26,7 +111,7 @@ var storageSupported = function(type) {
  */
 var Storage = function (type) {
 
-  function createCookie(name, value, days) {
+  function createCookie (name, value, days) {
     var date;
     var expires;
 
@@ -42,7 +127,7 @@ var Storage = function (type) {
     document.cookie = name + '=' + value + expires + '; path=/';
   }
 
-  function readCookie(name) {
+  function readCookie (name) {
     var nameEQ = name + '=';
     var ca = document.cookie.split(';');
     var i;
@@ -63,7 +148,7 @@ var Storage = function (type) {
     return null;
   }
 
-  function setData(data) {
+  function setData (data) {
     data = JSON.stringify(data);
     if (type === 'session') {
       window.name = data;
@@ -73,7 +158,7 @@ var Storage = function (type) {
     }
   }
 
-  function clearData() {
+  function clearData () {
     if (type === 'session') {
       window.name = '';
     }
@@ -82,7 +167,7 @@ var Storage = function (type) {
     }
   }
 
-  function getData() {
+  function getData () {
     var data = type === 'session' ? window.name : readCookie('localStorage');
     try {
       return data ? JSON.parse(data) : {};
@@ -136,10 +221,18 @@ var Storage = function (type) {
   };
 };
 
+/**
+ * Simple event system.
+ */
 function Events() {
   this._events = {};
 }
 
+/**
+ * Trigger an event.
+ *
+ * @param  {String} name
+ */
 Events.prototype.trigger = function (name) {
   var args = Array.prototype.slice.call(arguments, 1);
 
@@ -150,6 +243,12 @@ Events.prototype.trigger = function (name) {
   }
 };
 
+/**
+ * Subscribe to an event.
+ *
+ * @param  {String}   name
+ * @param  {Function} callback
+ */
 Events.prototype.on = function (name, callback) {
   if (!this._events.hasOwnProperty(name)) {
     this._events[name] = [];
@@ -161,13 +260,31 @@ Events.prototype.on = function (name, callback) {
 /**
  * Slice object.
  *
- * @param {String}  name
- * @param {Boolean} forced
+ * @param {String}  name The name of the test slice.
  */
-function Slice (name, forced) {
+function Slice (name) {
   this.name = name;
-  this.forced = !!forced;
 }
+
+/**
+ * String representation of the slice.
+ *
+ * @return {String}
+ */
+Slice.prototype.toString = function () {
+  return this.name;
+};
+
+/**
+ * JSON representation of the slice.
+ *
+ * @return {Object}
+ */
+Slice.prototype.toJSON = function () {
+  return {
+    name: this.name
+  };
+};
 
 /**
  * Test object.
@@ -201,6 +318,7 @@ Test.prototype.slices = function (slices) {
   for (var x = 0, len = slices.length; x < len; x++) {
     this.add(new Slice(slices[x]));
   }
+
   return this;
 };
 
@@ -221,40 +339,29 @@ Test.prototype.add = function (slice) {
  * @return {this}
  */
 Test.prototype.run = function (callback) {
-  var urlSlice = this.urlSlice();
-  var storedSlice = this.storedSlice();
+  // Check for a URL override and fallback to local storage.
+  var slice = this.urlSlice() || this.storedSlice();
 
-  // Check the URL for a slice override.
-  if (urlSlice && this.hasSlice(urlSlice)) {
-    this.slice = this._slices[urlSlice];
-    this.slice.forced = true;
-    // TODO: Trigger start event for overrides?
-    // ab.events.trigger('start', this);
-  }
-
-  // Check if the user has been sliced-out of the test.
-  else if (storedSlice === false) {
-    this.slice = new Slice('control');
-  }
-
-  // Check storage for an existing slice.
-  else if (storedSlice !== null && this.hasSlice(storedSlice)) {
-    this.slice = this._slices[storedSlice];
+  // Check that the slice exists as it's possible that the slice
+  // defined in local storage was not defined at runtime.
+  if (slice !== false && this.hasSlice(slice)) {
+    this.slice = this.getSlice(slice);
   }
 
   // Make sure the user belongs in the test.
   else if (Math.random() > this.traffic) {
     this.slice = new Slice('control');
-    this.storage.setItem(this.key(), JSON.stringify(false));
     ab.events.trigger('start', this);
   }
 
   // Choose a slice for the user.
   else {
     this.slice = this.chooseSlice();
-    this.storage.setItem(this.key(), JSON.stringify(this.slice.name));
     ab.events.trigger('start', this);
   }
+
+  // Save the slice to local storage.
+  this.storage.setItem(this.key(), this.slice.name);
 
   if (typeof callback === 'function') {
     callback.call(this);
@@ -273,6 +380,7 @@ Test.prototype.run = function (callback) {
 Test.prototype.chooseSlice = function () {
   var slices = [];
 
+  // Get an array of all slice names.
   for (var slice in this._slices) {
     if (this._slices.hasOwnProperty(slice)) {
       slices.push(slice);
@@ -284,7 +392,7 @@ Test.prototype.chooseSlice = function () {
   }
 
   var index = Math.floor(Math.random() / (1.0 / slices.length));
-  return this._slices[slices[index]];
+  return this.getSlice(slices[index]);
 };
 
 /**
@@ -294,7 +402,17 @@ Test.prototype.chooseSlice = function () {
  * @return {Boolean}
  */
 Test.prototype.hasSlice = function (name) {
-  return this._slices.hasOwnProperty(name);
+  return name === 'control' || this._slices.hasOwnProperty(name);
+};
+
+/**
+ * Get a slice by name.
+ *
+ * @param  {String} name
+ * @return {Slice}
+ */
+Test.prototype.getSlice = function (name) {
+  return name === 'control' ? new Slice('control') : this._slices[name];
 };
 
 /**
@@ -322,17 +440,13 @@ Test.prototype.urlSlice = function () {
 };
 
 /**
- * Retrieve a slice from local storage.
+ * Retrieve a slice from local storage. Returns null if there is no slice in
+ * local storage.
  *
  * @return {String|null}
  */
 Test.prototype.storedSlice = function () {
-  try {
-    return JSON.parse(this.storage.getItem(this.key()));
-  }
-  catch (e) {
-    return null;
-  }
+  return this.storage.getItem(this.key());
 };
 
 /**
@@ -345,11 +459,19 @@ Test.prototype.key = function () {
 };
 
 /**
+ * String representation of this test.
+ *
+ * @return {String}
+ */
+Test.prototype.toString = function () {
+  return this.key();
+};
+
+/**
  * Clear this test from local storage.
  */
 Test.prototype.clear = function () {
-  var storage = storageSupported('local') ? window.localStorage : new Storage('local');
-  storage.removeItem(this.key());
+  this.storage.removeItem(this.key());
 };
 
 /**
@@ -378,91 +500,6 @@ Test.prototype.script = function (src, async) {
   var firstScript = document.getElementsByTagName('script')[0];
   firstScript.parentNode.insertBefore(script, firstScript);
   return this;
-};
-
-/**
- * Test registry.
- *
- * @type {Object}
- */
-var _tests = {};
-
-/**
- * Save a reference to whatever previously occupied the global
- * 'ab' variable.
- *
- * @type {Object}
- */
-var _ab = window.ab;
-
-/**
- * Create/retrieve and ab test.
- *
- * @param  {String} name
- * @param  {Float} traffic
- * @return {Test}
- */
-var ab = function (name, traffic, slices) {
-  if (_tests.hasOwnProperty(name)) {
-    return _tests[name];
-  }
-
-  if (typeof traffic === 'undefined') {
-    traffic = 1;
-  }
-
-  _tests[name] = new Test(name, traffic);
-
-  if (slices && slices.length) {
-    _tests[name].slices(slices);
-  }
-
-  return _tests[name];
-};
-
-/**
- * Clear all tests from local storage.
- */
-ab.clear = function () {
-  for (var test in _tests) {
-    if (_tests.hasOwnProperty(test)) {
-      _tests[test].clear();
-    }
-  }
-  _tests = {};
-};
-
-/**
- * Restore the global 'ab' variable. Return the ab object.
- *
- * @return {Object}
- */
-ab.noConflict = function () {
-  window.ab = _ab;
-  return ab;
-};
-
-/**
- * Event bus.
- *
- * @type {Events}
- */
-ab.events = new Events();
-
-/**
- * ab version.
- *
- * @type {String}
- */
-ab.version = '0.0.2';
-
-/**
- * Global ab configuration
- *
- * @type {Object}
- */
-ab.config = {
-  STORAGE_PREFIX: 'ab:'
 };
 
 ab.Test = Test;

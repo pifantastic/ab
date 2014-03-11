@@ -1,1 +1,1 @@
-console.log('a.js');
+document.querySelector('#three').style.backgroundColor = 'hotpink';

@@ -5,7 +5,7 @@
   <link rel="stylesheet" href="lib/mocha.css" />
 </head>
 <body>
-  <a href="dev.html">dev</a> | <a href="build.html">build</a>
+  <a href="dev.html">dev</a> | <a href="build.html">build</a> | <a href="../../examples/index.html">examples</a>
   <div id="mocha"></div>
   <script src="lib/jquery.js"></script>
   <script src="lib/sinon.js"></script>
@@ -16,6 +16,7 @@
   <script src="../index.js"></script>
   <script>
     if (navigator.userAgent.indexOf('PhantomJS') < 0) {
+      mocha.options.timeout = 4000;
       mocha.run();
     }
   </script>
