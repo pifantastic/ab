@@ -208,7 +208,7 @@ describe('ab', function () {
 
     });
 
-    describe('urlSlice', function () {
+    describe('urlSlice()', function () {
 
       it('TODO', function () {});
 

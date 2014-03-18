@@ -60,14 +60,14 @@ module.exports = function (grunt) {
       dev: {
         src: ['tests/runners/dev.html'],
         options: {
-          reporter: 'Nyan',
+          reporter: 'Spec',
           run: true
         }
       },
       build: {
         src: ['tests/runners/build.html'],
         options: {
-          reporter: 'Nyan',
+          reporter: 'Spec',
           run: true
         }
       }
