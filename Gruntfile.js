@@ -91,16 +91,16 @@ module.exports = function (grunt) {
     },
 
     jshint: {
+      options: {
+        '-W084': true,
+        '-W107': true
+      },
       all: [
         'Gruntfile.js',
         'index.js',
         'tests/*.js',
         'examples/*.js'
-      ],
-      options: {
-        '-W084': true,
-        '-W107': true
-      }
+      ]
     },
 
     copy: {

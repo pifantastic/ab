@@ -1,6 +1,8 @@
 
 (function() {
 
+// TODO: Smarter logic for when window.ab already exists.
+
 /**
  * Test registry.
  *
@@ -42,6 +44,7 @@ ab.clear = function () {
       _tests[test].clear();
     }
   }
+
   _tests = {};
 };
 
@@ -345,7 +348,7 @@ Test.prototype.run = function (callback) {
 
   // Check that the slice exists as it's possible that the slice
   // defined in local storage was not defined at runtime.
-  if (slice !== false && this.hasSlice(slice)) {
+  if (slice && this.hasSlice(slice)) {
     this.slice = this.getSlice(slice);
   }
 
@@ -428,6 +431,7 @@ Test.prototype.urlSlice = function () {
   var match;
 
   // Matches '<prefix>:<test>=<slice>'
+  // TOOO: Improve this regex. Define what a valid slice name is.
   var re = new RegExp('(' + this.key() + ')=([\\w0-9]+)');
 
   if (match = hash.match(re)) {

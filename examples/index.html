@@ -46,14 +46,14 @@
      * Log all 'start' events.
      */
     ab.events.on('start', function (test) {
-      log('sliced into %s for the %s test', test.slice.name, test.name);
+      log('[start] sliced into %s for the %s test', test.slice.name, test.name);
     });
 
     /**
      * Log all 'run' events.
      */
     ab.events.on('run', function (test) {
-      log('"%s" test is using slice %s', test.name, test.slice.name);
+      log('[run  ] "%s" test is using slice %s', test.name, test.slice.name);
     });
 
     /**
