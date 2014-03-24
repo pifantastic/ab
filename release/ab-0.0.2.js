@@ -1,6 +1,8 @@
-/*! ab - v0.0.2 - 2014-03-11 */
+/*! ab - v0.0.2 - 2014-03-24 */
 
 (function() {
+
+// TODO: Smarter logic for when window.ab already exists.
 
 /**
  * Test registry.
@@ -43,6 +45,7 @@ ab.clear = function () {
       _tests[test].clear();
     }
   }
+
   _tests = {};
 };
 
@@ -221,6 +224,8 @@ var Storage = function (type) {
   };
 };
 
+var localStorage = storageSupported('local') ? window.localStorage : new Storage('local');
+
 /**
  * Simple event system.
  */
@@ -296,7 +301,7 @@ function Test (name, traffic) {
   this.name = name;
   this.traffic = traffic;
   this.slice = null;
-  this.storage = storageSupported('local') ? window.localStorage : new Storage('local');
+  this.storage = localStorage;
   this._slices = {};
 }
 
@@ -344,7 +349,7 @@ Test.prototype.run = function (callback) {
 
   // Check that the slice exists as it's possible that the slice
   // defined in local storage was not defined at runtime.
-  if (slice !== false && this.hasSlice(slice)) {
+  if (slice && this.hasSlice(slice)) {
     this.slice = this.getSlice(slice);
   }
 
@@ -402,7 +407,7 @@ Test.prototype.chooseSlice = function () {
  * @return {Boolean}
  */
 Test.prototype.hasSlice = function (name) {
-  return name === 'control' || this._slices.hasOwnProperty(name);
+  return (name === 'control' && this.traffic < 1) || this._slices.hasOwnProperty(name);
 };
 
 /**
@@ -427,6 +432,7 @@ Test.prototype.urlSlice = function () {
   var match;
 
   // Matches '<prefix>:<test>=<slice>'
+  // TOOO: Improve this regex. Define what a valid slice name is.
   var re = new RegExp('(' + this.key() + ')=([\\w0-9]+)');
 
   if (match = hash.match(re)) {
