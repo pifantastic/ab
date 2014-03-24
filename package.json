@@ -1,6 +1,6 @@
 {
   "name": "ab",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "a javascript a/b testing library",
   "main": "index.js",
   "directories": {
