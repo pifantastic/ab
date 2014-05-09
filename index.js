@@ -1,7 +1,13 @@
 
 (function() {
 
-// TODO: Smarter logic for when window.ab already exists.
+/**
+ * Save a reference to whatever previously occupied the global
+ * 'ab' variable.
+ *
+ * @type {Object}
+ */
+var _ab = window.ab;
 
 /**
  * Test registry.
@@ -47,14 +53,6 @@ ab.clear = function () {
 
   _tests = {};
 };
-
-/**
- * Save a reference to whatever previously occupied the global
- * 'ab' variable.
- *
- * @type {Object}
- */
-var _ab = window.ab;
 
 /**
  * Restore the global 'ab' variable. Return the ab object.
